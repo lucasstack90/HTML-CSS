@@ -1,17 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nome da Pg</title>
-  </head>
-  <body>
-    <h1>Olá</h1>
-    <p>
-      Lorem ipsum, dolor sit amet consectetur adipisicing elit. Iusto illum quam
-      saepe veniam tenetur eaque eum? Commodi, adipisci nobis atque ut
-      laboriosam distinctio eveniet nesciunt eaque perferendis. Quod, aut
-      molestias.
-    </p>
-  </body>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Molecule Match - Jogo de Fórmulas</title>
+<style>
+  body {font-family: Inter, system-ui, sans-serif; background:#f5f7fb; color:#111; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;}
+  .card {background:white; border-radius:12px; box-shadow:0 8px 30px rgba(12,20,45,0.08); padding:22px; width:420px;}
+  h1{margin:0 0 10px; font-size:20px;}
+  .target{background:#eef6ff; padding:12px; border-radius:8px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;}
+  .formula {font-weight:700; font-size:18px;}
+  .controls {display:flex; gap:8px; margin:12px 0; flex-wrap:wrap;}
+  .btn {padding:8px 12px; border-radius:8px; border:0; cursor:pointer; box-shadow:0 2px 6px rgba(12,20,45,0.06);}
+  .elem {background:#fff; border:1px solid #e1e6f0;}
+  .elem:hover{transform:translateY(-2px);}
+  .display {background:#f7fafc; padding:12px; border-radius:8px; min-height:48px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .chip {background:#fff; padding:6px 10px; border-radius:999px; border:1px solid #e6eef7; font-weight:600;}
+  .actions{display:flex; gap:8px; margin-top:12px;}
+  .danger{background:#fff0f0;border:1px solid #ffd6d6}
+  .success{background:#f0fff6;border:1px solid #d3ffd8}
+  .small{font-size:13px;color:#55607a}
+  footer{margin-top:12px;text-align:center;font-size:13px;color:#667085}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Molecule Match</h1>
+    <div class="target">
+      <div>
+        <div class="small">Monte a fórmula de:</div>
+        <div id="targetName" class="formula">Água</div>
+      </div>
+      <div class="small">Pontos: <span id="score">0</span></div>
+    </div>
+
+    <div class="small">Elementos disponíveis</div>
+    <div class="controls" id="elements">
+      <!-- elementos gerados por JS -->
+    </div>
+
+    <div style="margin-top:10px" class="small">Sua fórmula</div>
+    <div class="display" id="display"></div>
+
+    <div class="actions">
+      <button class="btn elem" id="btnUndo">Desfazer</button>
+      <button class="btn elem danger" id="btnClear">Limpar</button>
+      <button class="btn elem success" id="btnSubmit">Submeter</button>
+      <button class="btn elem" id="btnSkip">Pular</button>
+    </div>
+
+    <div id="feedback" class="small" style="margin-top:10px"></div>
+
+    <footer>
+      Dica: os números após os símbolos (ex.: H₂O) representam quantos átomos de cada elemento existem.
+    </footer>
+  </div>
+
+<script>
+const targets = [
+  {name:'Água', formula:{H:2, O:1}},
+  {name:'Dióxido de Carbono', formula:{C:1, O:2}},
+  {name:'Cloreto de Sódio', formula:{Na:1, Cl:1}},
+  {name:'Metano', formula:{C:1, H:4}},
+  {name:'Amoníaco', formula:{N:1, H:3}},
+  {name:'Glicina (aminoácido simples)', formula:{C:2, H:5, N:1, O:2}} // educativo
+];
+
+const elementsList = ['H','C','O','N','Na','Cl'];
+
+let roundIndex = 0;
+let score = 0;
+let currentStack = []; // array of element symbols chosen in order
+
+const elTargetName = document.getElementById('targetName');
+const elElements = document.getElementById('elements');
+const elDisplay = document.getElementById('display');
+const elFeedback = document.getElementById('feedback');
+const elScore = document.getElementById('score');
+
+function startRound(){
+  currentStack = [];
+  elDisplay.innerHTML = '';
+  elFeedback.textContent = '';
+  const target = targets[roundIndex % targets.length];
+  elTargetName.textContent = target.name;
+  renderElements();
+}
+
+function renderElements(){
+  elElements.innerHTML = '';
+  elementsList.forEach(sym => {
+    const btn = document.createElement('button');
+    btn.className = 'btn elem';
+    btn.textContent = sym;
+    btn.onclick = ()=> { addElement(sym); };
+    elElements.appendChild(btn);
+  });
+}
+
+function addElement(sym){
+  currentStack.push(sym);
+  renderStack();
+}
+
+function renderStack(){
+  elDisplay.innerHTML = '';
+  // compute counts
+  const counts = {};
+  currentStack.forEach(s=> counts[s] = (counts[s]||0) + 1);
+  // show chips with subscript numbers when >1
+  for(const [sym, cnt] of Object.entries(counts)){
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = cnt>1 ? `${sym}<sub style="font-size:0.65em">${cnt}</sub>` : sym;
+    elDisplay.appendChild(chip);
+  }
+  if (currentStack.length===0){
+    elDisplay.textContent = 'Nenhum elemento selecionado';
+  }
+}
+
+document.getElementById('btnUndo').onclick = ()=>{
+  currentStack.pop();
+  renderStack();
+};
+document.getElementById('btnClear').onclick = ()=>{
+  currentStack = [];
+  renderStack();
+};
+document.getElementById('btnSkip').onclick = ()=>{
+  roundIndex++;
+  startRound();
+};
+document.getElementById('btnSubmit').onclick = ()=>{
+  checkAnswer();
+};
+
+function countsFromStack(stack){
+  const c = {};
+  stack.forEach(s=> c[s]=(c[s]||0)+1);
+  return c;
+}
+
+function sameCounts(a,b){
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for(const k of keys){
+    if ((a[k]||0) !== (b[k]||0)) return false;
+  }
+  return true;
+}
+
+function checkAnswer(){
+  const target = targets[roundIndex % targets.length];
+  const userCounts = countsFromStack(currentStack);
+  if (sameCounts(userCounts, target.formula)){
+    elFeedback.textContent = 'Correto! ✅';
+    score += 10;
+    elScore.textContent = score;
+    // small celebration visual
+    elFeedback.className = 'small';
+    setTimeout(()=>{ roundIndex++; startRound(); }, 900);
+  } else {
+    elFeedback.textContent = 'Não é isso. Tente ajustar a fórmula.';
+    elFeedback.className = 'small';
+  }
+}
+
+startRound();
+</script>
+</body>
 </html>
