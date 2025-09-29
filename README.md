@@ -1,4 +1,4 @@
-# 🧪 Joguinho de Química
+# 🧪 Química Em Ação 
 
 Um jogo educativo de **Química** desenvolvido com **HTML**, **CSS** e **JavaScript**.  
 O objetivo é tornar o estudo de conceitos químicos mais divertido e interativo.
